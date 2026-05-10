@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Piece as PieceSVG, DEFAULT_PIECE_STYLE } from "./pieces";
+
 
 // =====================================================================
 // TYPES
@@ -457,7 +457,8 @@ export default function Game() {
   }, []);
 
   function dismissRules() {
-  setShowRules(false);
+    setShowRules(false);
+    try { if (typeof window !== "undefined") localStorage.setItem("powerchess_seen_rules", "1"); } catch {}
   }
 
   function consumeCard(cardId: string) {
@@ -956,9 +957,12 @@ export default function Game() {
                 <button key={p.type} onClick={() => pickReincarnateType(p.type)}
                   className="w-14 h-14 flex flex-col items-center justify-center border border-stone-600 hover:border-amber-400 transition"
                   style={{background:"linear-gradient(180deg, #2a221a 0%, #161210 100%)"}}>
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <PieceSVG type={p.type} color={p.color} />
-                  </div>
+                  <div className="w-8 h-8 flex items-center justify-center" style={{
+                    fontSize: "26px",
+                    color: p.color === "white" ? "#fafaf5" : "#1c1410",
+                    textShadow: p.color === "white" ? "0 1px 0 rgba(0,0,0,0.6)" : "0 1px 0 rgba(255,255,255,0.15)",
+                    lineHeight: 1,
+                  }}>{PIECE_GLYPH[p.color][p.type]}</div>
                   <span className="text-[8px] font-display tracking-widest text-stone-400 mt-0.5">{p.type.toUpperCase()}</span>
                 </button>
               ))}
@@ -1092,8 +1096,14 @@ function BoardView({ board, selected, legalMoves, onSquareClick, inCheckColor, t
                 <div className="relative z-10 piece-breathe flex items-center justify-center w-full h-full" style={{
                   animationDelay: `${((r * 8 + c) % 7) * 0.4}s`,
                   filter: frozen ? "hue-rotate(180deg) brightness(0.85)" : (shielded ? "drop-shadow(0 0 6px rgba(212,162,79,0.8))" : "none"),
+                  fontSize: "clamp(26px, 8vw, 48px)",
+                  lineHeight: 1,
+                  color: piece.color === "white" ? "#fafaf5" : "#1c1410",
+                  textShadow: piece.color === "white"
+                    ? "0 1px 0 rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3)"
+                    : "0 1px 0 rgba(255,255,255,0.15)",
                 }}>
-                  <PieceSVG type={piece.type} color={piece.color} />
+                  {PIECE_GLYPH[piece.color][piece.type]}
                 </div>
               )}
 
@@ -1365,7 +1375,7 @@ function CapturedRow({ captured }: { captured: Piece[] }) {
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           marginLeft: i === 0 ? 0 : -3, opacity: 0.85,
         }}>
-          <PieceSVG type={p.type} color={p.color} />
+          {PIECE_GLYPH[p.color][p.type]}
         </span>
       ))}
     </div>
