@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { Piece as PieceSVG, DEFAULT_PIECE_STYLE } from "./pieces";
 
 // =====================================================================
 // TYPES
@@ -428,7 +429,7 @@ export default function Game() {
   const [captured, setCaptured] = useState<Record<Color, Piece[]>>({ white: [], black: [] });
   const [gameOver, setGameOver] = useState<GameOver | null>(null);
   const [message, setMessage] = useState("White to move. Capture pieces to earn points and buy cards.");
-  const [showRules, setShowRules] = useState(true);
+  const [showRules, setShowRules] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<CardKey | null>(null);
   const [hoveredTier, setHoveredTier] = useState<1 | 2 | 3 | null>(null);
   const [lastMove, setLastMove] = useState<{ from: { r: number; c: number }; to: { r: number; c: number } } | null>(null);
@@ -446,6 +447,19 @@ export default function Game() {
     if (gameOver) return null;
     return isInCheck(board, turn) ? turn : null;
   }, [board, turn, gameOver]);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && !localStorage.getItem("powerchess_seen_rules")) {
+        setShowRules(true);
+      }
+    } catch { setShowRules(true); }
+  }, []);
+
+  function dismissRules() {
+    setShowRules(false);
+    try { if (typeof window !== "undefined") localStorage.setItem("powerchess_seen_rules", "1"); } catch {}
+  }
 
   function consumeCard(cardId: string) {
     setHands((h) => ({ ...h, [turn]: h[turn].filter((c) => c.id !== cardId) }));
@@ -873,7 +887,7 @@ export default function Game() {
               <p>Each turn you may buy <em>one</em> card and play <em>one</em> card. Hand limit is three.</p>
               <p className="font-serif-italic text-stone-400 text-sm">Castling and pawn promotion (to queen) work as in standard chess. En passant is omitted.</p>
             </div>
-            <button onClick={() => setShowRules(false)}
+            <button onClick={dismissRules}
               className="mt-6 w-full py-3 font-display text-sm tracking-widest border border-amber-600/60 text-amber-200 hover:bg-amber-900/20 transition">
               ENTER THE GAME
             </button>
@@ -943,12 +957,9 @@ export default function Game() {
                 <button key={p.type} onClick={() => pickReincarnateType(p.type)}
                   className="w-14 h-14 flex flex-col items-center justify-center border border-stone-600 hover:border-amber-400 transition"
                   style={{background:"linear-gradient(180deg, #2a221a 0%, #161210 100%)"}}>
-                  <span style={{
-                    fontSize: "28px",
-                    color: p.color === "white" ? "#fafaf5" : "#1c1410",
-                    textShadow: p.color === "white" ? "0 1px 0 rgba(0,0,0,0.6)" : "0 1px 0 rgba(255,255,255,0.15)",
-                    lineHeight: 1,
-                  }}>{PIECE_GLYPH[p.color][p.type]}</span>
+                  <div className="w-8 h-8 flex items-center justify-center">
+                    <PieceSVG type={p.type} color={p.color} />
+                  </div>
                   <span className="text-[8px] font-display tracking-widest text-stone-400 mt-0.5">{p.type.toUpperCase()}</span>
                 </button>
               ))}
@@ -1079,15 +1090,12 @@ function BoardView({ board, selected, legalMoves, onSquareClick, inCheckColor, t
               )}
 
               {piece && (
-                <span className="relative z-10" style={{
-                  fontSize: "clamp(26px, 8vw, 48px)",
-                  lineHeight: 1,
-                  color: piece.color === "white" ? "#fafaf5" : "#1c1410",
-                  textShadow: piece.color === "white"
-                    ? "0 1px 0 rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.3)"
-                    : "0 1px 0 rgba(255,255,255,0.15)",
+                <div className="relative z-10 piece-breathe flex items-center justify-center w-full h-full" style={{
+                  animationDelay: `${((r * 8 + c) % 7) * 0.4}s`,
                   filter: frozen ? "hue-rotate(180deg) brightness(0.85)" : (shielded ? "drop-shadow(0 0 6px rgba(212,162,79,0.8))" : "none"),
-                }}>{PIECE_GLYPH[piece.color][piece.type]}</span>
+                }}>
+                  <PieceSVG type={piece.type} color={piece.color} />
+                </div>
               )}
 
               {effectsOn.length > 0 && (
@@ -1351,14 +1359,15 @@ function CapturedRow({ captured }: { captured: Piece[] }) {
   const order: PieceType[] = ["queen", "rook", "bishop", "knight", "pawn"];
   const sorted = [...captured].sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
   return (
-    <div className="flex items-center flex-wrap max-w-[100px]">
+    <div className="flex items-center flex-wrap max-w-[120px]">
       {sorted.slice(0, 16).map((p, i) => (
         <span key={i} style={{
-          fontSize: "14px",
-          color: p.color === "white" ? "#fafaf5" : "#1c1410",
-          textShadow: p.color === "white" ? "0 0 2px rgba(0,0,0,0.6)" : "0 0 2px rgba(255,255,255,0.2)",
-          marginLeft: i === 0 ? 0 : -2, opacity: 0.8,
-        }}>{PIECE_GLYPH[p.color][p.type]}</span>
+          width: "16px", height: "16px",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          marginLeft: i === 0 ? 0 : -3, opacity: 0.85,
+        }}>
+          <PieceSVG type={p.type} color={p.color} />
+        </span>
       ))}
     </div>
   );
