@@ -457,8 +457,7 @@ export default function Game() {
   }, []);
 
   function dismissRules() {
-    setShowRules(false);
-    try { if (typeof window !== "undefined") localStorage.setItem("powerchess_seen_rules", "1"); } catch {}
+  setShowRules(false);
   }
 
   function consumeCard(cardId: string) {
